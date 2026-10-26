@@ -1,9 +1,23 @@
 # <PROJECT NAME> — project facts
 
-Pipeline version: **1.1.0**
+Process rules live in the pipeline's shared rules file — OpenCode loads it from
+`~/.config/opencode/AGENTS.md`, Claude Code from `~/.claude/rules/pipeline.md`;
+both are the same file — and apply here unchanged. This file adds facts about
+*this* project. It does not relax anything.
 
-Process rules live in `~/.config/opencode/AGENTS.md` and apply here unchanged.
-This file adds facts about *this* project. It does not relax anything.
+This file sits at the repo root on purpose: OpenCode and Claude Code both load
+it from there (Claude Code through the `@AGENTS.md` import in `CLAUDE.md`).
+Keep it the single source of project facts for both tools.
+
+## Pipeline layout
+
+| Path | What | Used by |
+|---|---|---|
+| `.handoff/` | plans, specs, reports — the shared record | both tools |
+| `.workitems/` | ingested tickets; `TRACKING.md` says whether any exist | both tools |
+| `.opencode/` | OpenCode project overrides (models, permissions) | OpenCode |
+| `.claude/` | Claude Code project settings | Claude Code |
+| `AGENTS.md` / `CLAUDE.md` | project facts / Claude's import of them | both tools |
 
 ---
 
@@ -23,7 +37,7 @@ another team's system>
 **Dependency direction:** <who may depend on whom, and what must never be a
 dependency of what>
 
-See `.opencode/MAP.md` for the generated detail. Regenerate it with `/map`
+See `.handoff/MAP.md` for the generated detail. Regenerate it with `/map`
 after any structural change.
 
 ---

@@ -1,0 +1,15 @@
+@AGENTS.md
+
+## Claude Code
+
+Pipeline: `/spec <slice or ticket>` → read the spec → `/build <stem>`. Plans
+may also come from OpenCode's `/plan`; hand them over with `/spec <stem>`.
+The record lives in `.handoff/` and is shared with OpenCode — read it, never
+rewrite an earlier document.
+
+Match the model to the spec's tier (your call, `/model` to switch):
+T1 → Sonnet · T2 → Sonnet at high effort, or Opus · T3 → Opus. At T3 keep
+edits on manual approval; do not switch to accept-edits.
+
+Reads that would pull many files into this session go to the `Explore`
+subagent (it is pinned to a cheap model in `~/.claude/agents/Explore.md`).

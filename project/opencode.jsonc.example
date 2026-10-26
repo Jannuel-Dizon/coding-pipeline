@@ -1,283 +1,45 @@
 {
   "$schema": "https://opencode.ai/config.json",
 
-  // PROJECT LAYER — facts, not process. Copy to .opencode/opencode.json.
-  // If this file defines agents at all, it must define ALL SEVEN:
-  // design, arch, build, build-hard, build-critical, explore, ask. Do
-  // not rely on partial inheritance from global — one agent name with two
-  // definitions is how you end up unsure which one ran. In particular, do
-  // not name the stage-1 agent `plan`; that name is reserved by OpenCode.
-  "default_agent": "design",
-  "subagent_depth": 1,
+  // PROJECT LAYER — facts, not process. Copied to .opencode/opencode.jsonc by
+  // /init (only when the file is missing). Everything below is commented out:
+  // with nothing uncommented, this project simply inherits the global config.
+  //
+  // OpenCode V2 merge rules (per https://opencode.ai/v2/docs/agents/):
+  //   - scalar keys you set here (model, description, ...) replace the global
+  //     value for that agent only
+  //   - `permissions` rules APPEND after the global rules, and the LAST
+  //     matching rule wins — so a rule here can tighten or loosen the global
+  //     one for this repo without restating the whole block
+  //   - you do NOT have to redefine every agent; override only what differs
+  //     (this replaces the pre-2.0 "define all seven or none" rule, which came
+  //     from V1's replace-the-whole-agent merging)
+  //
+  // Untested against a live V2 session as of pipeline 2.0.0 — if an override
+  // here seems ignored, check `opencode.ai/v2/docs/config` precedence first.
 
-  "agent": {
-    "design": {
-      "mode": "primary",
-      "description": "Stage 1. Designs a slice with you. Reads project shape, never implementation bodies.",
-      "model": "opencode/deepseek-v4-flash",
-      "temperature": 0.3,
-      "prompt": "{file:~/.config/opencode/prompts/plan.md}",
-      "permission": {
-        // TIGHTEN THESE TO YOUR LAYOUT. Catch-all first, denies next, allows last — last match wins.
-        "read": {
-          "*": "allow",
-          "<SOURCE_GLOB e.g. src/**/*.<EXT>>": "deny",
-          "<PUBLIC_ENTRY_POINTS e.g. **/lib.rs>": "allow",
-          "**/*.md": "allow",
-          "**/<MANIFEST e.g. Cargo.toml>": "allow",
-          "*.env": "deny",
-          "*.env.*": "deny"
-        },
-        "edit": { "*": "deny", },
-        "write": { "*": "deny", },
-        "grep": "allow",
-        "glob": "allow",
-        // bash stays fully denied here regardless — no compound-command
-        // gap possible since every piece of any command hits this deny.
-        // This is also what keeps `read`'s source-file denies meaningful:
-        // an agent with bash allowed can `cat` around a read deny.
-        "bash": "deny",
-        "task": { "*": "deny", "explore": "allow", "scribe": "allow" }
-      }
-    },
+  // "agents": {
+  //   // Pin a paid, zero-retention model for the stage that reads real source:
+  //   "arch": { "model": "opencode/deepseek-v4-flash#max" },
+  //
+  //   // T3 is the one place a free-tier retention caveat is hardest to defend:
+  //   "build-critical": { "model": "opencode/claude-opus-5#max" },
+  //
+  //   // Tighten the planner's read wall to this repo's layout. These append
+  //   // after the global rules and win because they match last:
+  //   "design": {
+  //     "permissions": [
+  //       { "action": "read", "resource": "src/**", "effect": "deny" },
+  //       { "action": "read", "resource": "src/lib.rs", "effect": "allow" }
+  //     ]
+  //   }
+  // },
 
-    "arch": {
-      "mode": "primary",
-      "description": "Stage 2. Verifies a plan against the codebase, assigns a tier, writes a spec.",
-      "model": "opencode/gpt-5.6-luna",
-      "temperature": 0.2,
-      "prompt": "{file:~/.config/opencode/prompts/arch.md}",
-      "permission": {
-        "read": { "*": "allow", "*.env": "deny", "*.env.*": "deny" },
-        "edit": { "*": "deny",  },
-        "write": { "*": "deny",  },
-        // CHANGED: catch-all "ask" -> "allow". arch only ever needs
-        // read-only queries per its prompt; named denies below cover the
-        // actual risk (destructive git, accidental commits/pushes). If
-        // this project needs tighter arch permissions, revert the
-        // catch-all to "ask" and rebuild the allowlist explicitly.
-        "bash": {
-          "*": "allow",
-          "rm *": "deny",
-          "git commit*": "deny",
-          "git push*": "deny",
-          "git checkout*": "deny",
-          "git reset*": "deny"
-        },
-        "task": { "*": "deny", "explore": "allow", "scribe": "allow" }
-      }
-    },
-
-    "build": {
-      "mode": "primary",
-      "description": "Stage 3, tier T1 (routine).",
-      "model": "opencode/hy3-free",
-      "temperature": 0.1,
-      "prompt": "{file:~/.config/opencode/prompts/build.md}",
-      "permission": {
-        // REVERTED: edit/write catch-all back to "ask". Previously set to
-        // "allow" on the theory that Rule 3's chat go-ahead already
-        // covers it — but that go-ahead is "start the stage," not
-        // "approved for every file this stage touches." The per-edit
-        // prompt is the second, finer-grained checkpoint and isn't
-        // redundant with the first. Set back to "allow" only if you've
-        // deliberately decided you don't want that second checkpoint.
-        "edit": {
-          "*": "ask",
-        },
-        "write": {
-          "*": "ask",
-        },
-        // CHANGED: catch-all "ask" -> "allow". Fill in your project's
-        // actual check/build commands as explicit denies if any of them
-        // are destructive (e.g. a script that force-cleans a directory).
-        "bash": {
-          "*": "allow",
-          "rm *": "deny",
-          "git commit*": "ask",
-          "git push*": "deny"
-        },
-        "task": { "*": "deny", "explore": "allow", "scribe": "allow" }
-      }
-    },
-
-    "build-hard": {
-      "mode": "primary",
-      "description": "Stage 3, tier T2 (hard).",
-      "model": "opencode/deepseek-v4-flash",
-      "temperature": 0.1,
-      "prompt": "{file:~/.config/opencode/prompts/build-hard.md}",
-      "permission": {
-        // REVERTED: same as build above — edit/write catch-all back to
-        // "ask". T2 is non-obvious logic by definition; it deserves the
-        // per-edit checkpoint at least as much as T1 does.
-        "edit": {
-          "*": "ask",
-        },
-        "write": {
-          "*": "ask",
-        },
-        "bash": {
-          "*": "allow",
-          "rm *": "deny",
-          "git commit*": "ask",
-          "git push*": "deny"
-        },
-        "task": { "*": "deny", "explore": "allow", "scribe": "allow" }
-      }
-    },
-
-    "build-critical": {
-      "mode": "primary",
-      "description": "Stage 3, tier T3 (critical). Narrow scope, per-edit approval.",
-      "model": "opencode/claude-opus-5",
-      "temperature": 0.1,
-      "prompt": "{file:~/.config/opencode/prompts/build-critical.md}",
-      "permission": {
-        // Every edit is approved individually here. Do not choose 'always' at a T3 prompt.
-        // UNCHANGED, deliberately — per-edit approval is the T3 mechanism
-        // itself, not incidental friction. Do not widen this the way
-        // build/build-hard were widened and then reverted above.
-        "edit": {
-          "*": "ask",
-        },
-        "write": {
-          "*": "ask",
-        },
-        // CHANGED: added read-only inspection commands so a compound
-        // line (e.g. `cd dir; ls | grep foo`) doesn't hit "ask" on every
-        // piece that isn't the exact literal already allowlisted — bash
-        // permission checks each piece of a `;`/`&&`/`|` chain
-        // separately. This does NOT loosen file access; edit/write above
-        // stay per-edit "ask" regardless of what bash allows.
-        "bash": {
-            "*": "ask",
-            "ls*": "allow",
-            "rg *": "allow",
-            "grep *": "allow",
-            "head *": "allow",
-            "tail *": "allow",
-            "wc *": "allow",
-            "echo *": "allow",
-            "cd *": "allow",
-            "find *": "allow",
-            "xargs grep*": "allow",
-            "cargo check*": "allow",
-            "cargo clippy*": "allow",
-            "cargo test*": "allow",
-            "./Check.sh*": "allow",
-            "git status*": "allow",
-            "git diff*": "allow",
-            "git log*": "allow",
-            "rm *": "deny",
-            "cargo add*": "deny",
-            "cargo update*": "deny",
-            "git commit*": "ask",
-            "git push*": "deny",
-            "*-exec*": "deny"
-        },
-        "task": { "*": "deny", "explore": "allow", "scribe": "allow" }
-      }
-    },
-
-    "explore": {
-      "mode": "subagent",
-      "description": "Read-only lookup. Answers one question in prose with file:line references.",
-      "model": "opencode/deepseek-v4-flash",
-      "temperature": 0.1,
-      "prompt": "{file:~/.config/opencode/prompts/explore.md}",
-      "permission": {
-        "read": { "*": "allow", "*.env": "deny", "*.env.*": "deny" },
-        "grep": "allow",
-        "glob": "allow",
-        "edit": "deny",
-        "write": "deny",
-        "bash": "deny",
-        "webfetch": "deny",
-        "task": "deny"
-      }
-    },
-
-    "scribe": {
-      "mode": "subagent",
-      "description": "Write-only. Places a finished handoff document at the correct path. Never composes content.",
-      "model": "opencode/big-pickle",
-      "temperature": 0,
-      "prompt": "{file:~/.config/opencode/prompts/scribe.md}",
-      "permission": {
-        "read": "deny",
-        "grep": "deny",
-        "glob": {
-          "*": "deny",
-          ".opencode/handoff/**": "allow"
-        },
-        "edit": {
-          "*": "deny",
-          ".opencode/handoff/1-plan/**": "allow",
-          ".opencode/handoff/2-spec/**": "allow",
-          ".opencode/handoff/3-report/**": "allow"
-          ".opencode/MAP.md": "allow"
-        },
-        "write": {
-          "*": "deny",
-          ".opencode/handoff/1-plan/**": "allow",
-          ".opencode/handoff/2-spec/**": "allow",
-          ".opencode/handoff/3-report/**": "allow"
-          ".opencode/MAP.md": "allow"
-        },
-        "bash": "deny",
-        "webfetch": "deny",
-        "task": "deny"
-      }
-    },
-
-    "ask": {
-      "mode": "primary",
-      "description": "Casual Q&A, outside the pipeline. No handoff doc, no template, no tier.",
-      "model": "opencode/hy3-free",
-      "temperature": 0.3,
-      "prompt": "{file:~/.config/opencode/prompts/ask.md}",
-      "permission": {
-        "read": { "*": "allow", "*.env": "deny", "*.env.*": "deny" },
-        "edit": "deny",
-        "write": "deny",
-        "grep": "allow",
-        "glob": "allow",
-        // CHANGED: same compound-command fix as build-critical above.
-        // ask has no edit/write access at all (denied outright), so this
-        // only widens read-only shell inspection, not file access. Bash
-        // is still ask's one path to touching the filesystem outside
-        // edit/write's reach (mv/cp/curl/wget) — kept explicitly denied.
-        "bash": {
-            "*": "ask",
-            "ls*": "allow",
-            "cat *": "allow",
-            "rg *": "allow",
-            "grep *": "allow",
-            "head *": "allow",
-            "tail *": "allow",
-            "wc *": "allow",
-            "echo *": "allow",
-            "cd *": "allow",
-            "find *": "allow",
-            "xargs grep*": "allow",
-            "xargs cat*": "allow",
-            "xargs wc*": "allow",
-            "git status*": "allow",
-            "git log*": "allow",
-            "git diff*": "allow",
-            "cargo tree*": "allow",
-            "rm *": "deny",
-            "mv *": "deny",
-            "cp *": "deny",
-            "curl *": "deny",
-            "wget *": "deny",
-            "git commit*": "deny",
-            "git push*": "deny",
-            "*-exec*": "deny"
-        },
-        "task": "deny"
-      }
-    }
-  }
+  // Project-specific check commands for the build agents. `shell` patterns
+  // ending in " *" also match the bare command in V2.
+  // "permissions": [
+  //   { "action": "shell", "resource": "cargo check *", "effect": "allow" },
+  //   { "action": "shell", "resource": "cargo test *", "effect": "allow" },
+  //   { "action": "shell", "resource": "./Check.sh *", "effect": "allow" }
+  // ]
 }
