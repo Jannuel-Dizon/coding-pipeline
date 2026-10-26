@@ -83,6 +83,23 @@ the agent the tier names → `/build <stem>` → `/handoff <stem>`.
 interrupting that flow for. `/status [scope]` and `/tickets [filter]` are the
 same idea, aimed specifically at the handoff record and the work item index.
 
+## Script commands
+
+Both setup scripts are run from the clone (`./scripts/…`) or by full path.
+
+| Script | Command | What it does |
+|---|---|---|
+| `install-global.sh` | `./scripts/install-global.sh` | Per-device setup for both tools (default) |
+| | `./scripts/install-global.sh --opencode` | OpenCode global layer only |
+| | `./scripts/install-global.sh --claude` | Claude Code global layer only |
+| `init-project.sh` | `./scripts/init-project.sh [project-dir]` | Per-repo setup in `project-dir` (default: current directory). Creates only what is missing; never overwrites |
+| | `./scripts/init-project.sh --dry-run [project-dir]` | Print what would be created or flagged; change nothing |
+| | `./scripts/init-project.sh --migrate [project-dir]` | Move a pre-2.0 layout into place (uses `git mv` for tracked paths) |
+| | `./scripts/init-project.sh --help` | Print the script's header usage notes |
+
+`init-project.sh` output legend: `+` created, `=` kept, `>` moved, `!` needs a
+human look.
+
 ## The agents
 
 | Agent | Stage | Default model | Can it edit source? |
@@ -286,9 +303,8 @@ project/                        examples copied into each repo by /init
   claude-settings.json.example  → .claude/settings.json
   AGENTS.md.example, CLAUDE.md.example
 scripts/
-  install-global.sh             one-time per-device setup: symlinks both tools in
-  init-project.sh               per-project setup for both tools (idempotent; --migrate, --dry-run)
   install-global.sh             per-device setup (--opencode / --claude)
+  init-project.sh               per-project setup for both tools (idempotent; --migrate, --dry-run)
   pipeline-ctx.sh               read-only context helper the Claude skills call
   configured-model.sh           reads the configured model for an OpenCode agent
   build-explore-agent.sh        generates claude/agents/Explore.md from the shared explore prompt
