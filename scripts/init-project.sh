@@ -17,6 +17,10 @@
 # kept; a file that exists but looks wrong is flagged, not fixed. Output
 # legend:  + created   = kept   > moved   ! needs a human look
 #
+# If the project is a git repo (.git beside it), every path above is also
+# added to .git/info/exclude so it stays out of `git status`. Local only; the
+# tracked .gitignore is untouched, and files git already tracks are unaffected.
+#
 # --migrate   move a pre-2.0 layout into place: .opencode/handoff -> .handoff,
 #             .opencode/workitems -> .workitems, .opencode/MAP.md ->
 #             .handoff/MAP.md, .opencode/AGENTS.md -> AGENTS.md. Uses `git mv`
@@ -228,6 +232,35 @@ if exists "$PROJECT/.claude/settings.json"; then
 else
   act cp "$REPO_DIR/project/claude-settings.json.example" "$PROJECT/.claude/settings.json"
   say_created ".claude/settings.json (deny .env reads, git push, rm -rf; ask on commit)"
+fi
+
+# ------------------------------------------------------------ git exclude ---
+# Local-only ignore: the paths this script manages go into the repo's
+# .git/info/exclude, so they stay out of `git status` without touching the
+# tracked .gitignore. Exclude rules never affect files git already tracks.
+# Only a repo root (.git beside PROJECT) is touched; a subdirectory of a larger
+# repo would otherwise get root-anchored entries in the wrong place.
+
+EXCLUDE_PATHS=(.handoff .workitems .opencode .claude AGENTS.md CLAUDE.md)
+
+if [ -e "$PROJECT/.git" ] && in_git; then
+  exclude_file="$(git -C "$PROJECT" rev-parse --git-path info/exclude)"
+  case "$exclude_file" in /*) ;; *) exclude_file="$PROJECT/$exclude_file" ;; esac
+  for p in "${EXCLUDE_PATHS[@]}"; do
+    if [ "$DRY" != 1 ] && ! exists "$PROJECT/$p"; then continue; fi
+    if [ -f "$exclude_file" ] && grep -qxF "/$p" "$exclude_file"; then
+      say_kept ".git/info/exclude already has /$p"
+    elif [ "$DRY" = 1 ]; then
+      echo "  + .git/info/exclude += /$p (would add)"
+    else
+      mkdir -p "$(dirname "$exclude_file")"
+      if [ -s "$exclude_file" ] && [ -n "$(tail -c1 "$exclude_file")" ]; then echo >> "$exclude_file"; fi
+      echo "/$p" >> "$exclude_file"
+      echo "  + .git/info/exclude += /$p"
+    fi
+  done
+elif [ -e "$PROJECT/.git" ]; then
+  say_flag ".git is present but git cannot read this repo — .git/info/exclude not updated"
 fi
 
 # ----------------------------------------------------------- global layers ---

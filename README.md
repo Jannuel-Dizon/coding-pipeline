@@ -92,7 +92,7 @@ Both setup scripts are run from the clone (`./scripts/…`) or by full path.
 | `install-global.sh` | `./scripts/install-global.sh` | Per-device setup for both tools (default) |
 | | `./scripts/install-global.sh --opencode` | OpenCode global layer only |
 | | `./scripts/install-global.sh --claude` | Claude Code global layer only |
-| `init-project.sh` | `./scripts/init-project.sh [project-dir]` | Per-repo setup in `project-dir` (default: current directory). Creates only what is missing; never overwrites |
+| `init-project.sh` | `./scripts/init-project.sh [project-dir]` | Per-repo setup in `project-dir` (default: current directory). Creates only what is missing; never overwrites. In a git repo root, also adds the managed paths to `.git/info/exclude` (local only; `.gitignore` is untouched) |
 | | `./scripts/init-project.sh --dry-run [project-dir]` | Print what would be created or flagged; change nothing |
 | | `./scripts/init-project.sh --migrate [project-dir]` | Move a pre-2.0 layout into place (uses `git mv` for tracked paths) |
 | | `./scripts/init-project.sh --help` | Print the script's header usage notes |
