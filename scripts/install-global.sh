@@ -1,31 +1,40 @@
 #!/usr/bin/env bash
-# install-global.sh
+# install-global.sh [--opencode] [--claude]
 #
-# Run once per device. Links ~/.config/opencode/{opencode.jsonc,AGENTS.md,
-# prompts,commands,templates} to files inside this cloned repo's global/
-# directory. After this, updating on this device is just:
+# Run once per device (default: both tools). Everything is a symlink into this
+# cloned repo, so updating a device afterwards is just:
 #
 #   cd <this repo> && git pull
 #
-# No copying, no re-running this script, on every version bump.
+# OpenCode  (~/.config/opencode): opencode/{opencode.jsonc,commands} and
+#           shared/{AGENTS.md,prompts,templates}, plus `pipeline` -> this repo (scripts and VERSION).
+# Claude    (~/.claude): `pipeline` -> this repo, rules/pipeline.md (the shared
+#           rules), skills/<name> for each pipeline skill, agents/Explore.md,
+#           and the PreToolUse handoff guard merged into settings.json.
 #
-# Personal, per-device tweaks (e.g. swapping a model) do NOT go in the
-# symlinked opencode.jsonc — they go in a small override file that this
-# script creates once and NEVER touches again, loaded via OPENCODE_CONFIG.
+# Personal per-device OpenCode tweaks go in local-overrides.jsonc, which this
+# script creates once and NEVER touches again (loaded via OPENCODE_CONFIG).
+# Claude settings.json is only ever merged into, with a timestamped backup.
 
 set -euo pipefail
 
+DO_OPENCODE=1; DO_CLAUDE=1
+case "${1:-}" in
+  --opencode) DO_CLAUDE=0 ;;
+  --claude)   DO_OPENCODE=0 ;;
+  "")         ;;
+  *) echo "usage: $0 [--opencode] [--claude]" >&2; exit 2 ;;
+esac
+
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-GLOBAL_SRC="$REPO_DIR/global"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
+CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 OVERRIDE_FILE="$CONFIG_DIR/local-overrides.jsonc"
 
-mkdir -p "$CONFIG_DIR"
 
-link_one() {
-  local name="$1"
-  local src="$GLOBAL_SRC/$name"
-  local dst="$CONFIG_DIR/$name"
+link_to() {  # <src> <dst>
+  local src="$1" dst="$2"
+  mkdir -p "$(dirname "$dst")"
 
   if [ -L "$dst" ]; then
     echo "already symlinked: $dst -> $(readlink "$dst")"
@@ -43,12 +52,15 @@ link_one() {
   echo "linked: $dst -> $src"
 }
 
-link_one "opencode.jsonc"
-link_one "AGENTS.md"
-link_one "prompts"
-link_one "commands"
-link_one "templates"
-
+if [ "$DO_OPENCODE" = 1 ]; then
+echo "== OpenCode =="
+link_to "$REPO_DIR/opencode/opencode.jsonc" "$CONFIG_DIR/opencode.jsonc"
+link_to "$REPO_DIR/opencode/commands"       "$CONFIG_DIR/commands"
+for f in AGENTS.md prompts templates; do
+  link_to "$REPO_DIR/shared/$f" "$CONFIG_DIR/$f"
+done
+link_to "$REPO_DIR" "$CONFIG_DIR/pipeline"
+mkdir -p "$CONFIG_DIR"
 if [ ! -e "$OVERRIDE_FILE" ]; then
   cat > "$OVERRIDE_FILE" << 'EOF'
 {
@@ -90,6 +102,22 @@ else
   echo "OPENCODE_CONFIG already set in $SHELL_RC — check it points at $OVERRIDE_FILE"
 fi
 
+fi
+
+if [ "$DO_CLAUDE" = 1 ]; then
+echo "== Claude Code =="
+link_to "$REPO_DIR" "$CLAUDE_DIR/pipeline"
+link_to "$REPO_DIR/shared/AGENTS.md" "$CLAUDE_DIR/rules/pipeline.md"
+for d in "$REPO_DIR"/claude/skills/*/; do
+  n="$(basename "$d")"
+  link_to "${d%/}" "$CLAUDE_DIR/skills/$n"
+done
+"$REPO_DIR/scripts/build-explore-agent.sh" >/dev/null
+link_to "$REPO_DIR/claude/agents/Explore.md" "$CLAUDE_DIR/agents/Explore.md"
+python3 "$REPO_DIR/scripts/merge-claude-settings.py" \
+  "$CLAUDE_DIR/settings.json" "$REPO_DIR/claude/settings.pipeline.json"
+fi
+
 echo ""
 echo "Done. To update this device in future: cd $REPO_DIR && git pull"
-echo "No need to run this script again unless a new file is added upstream."
+echo "Re-run only if a new skill or file is added upstream (it is idempotent)."

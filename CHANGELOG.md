@@ -5,6 +5,38 @@ process — prompts, commands, templates) or needs a manual look at each
 project's filled `opencode.jsonc` / `AGENTS.md` (structural — new agents,
 changed defaults, changed permission shape).
 
+## 2.0.0
+
+**Structural — manual step required per project.** The handoff record and work
+items move out of `.opencode/` so OpenCode and Claude Code share them, and a
+Claude Code pipeline is added.
+
+- **Repo renamed `coding-pipeline`; `global/` split** into `shared/` (AGENTS.md, prompts, templates, used by both tools) and `opencode/` (opencode.jsonc, commands). Re-run `install-global.sh` once to repoint the symlinks.
+- **New layout.** `.handoff/` (plan/spec/report, templates, `MAP.md`),
+  `.workitems/` (with `TRACKING.md`: `Tracking: yes|none`), `.opencode/`,
+  `.claude/`. Prompts, commands, templates and scribe permissions all use the
+  new paths. Migrate an existing project with
+  `scripts/init-project.sh --migrate` (`--dry-run` first); it never moves
+  anything without the flag. Projects with their own `agent` permission block
+  that names `.opencode/handoff/**` must change it to `.handoff/**` by hand.
+- **Claude Code pipeline.** Skills `/spec`, `/build`, `/handoff`, `/ask`,
+  `/progress`, `/tickets`, `/map`, `/init` (`claude/skills/`); a custom
+  `Explore` subagent on Haiku built from the shared explore prompt; shared rules
+  imported through `~/.claude/rules/pipeline.md`; a PreToolUse guard on handoff
+  writes. Only `/spec` writes specs and only the build session writes reports.
+- **`/init` in both tools** runs `scripts/init-project.sh`, which checks for
+  existing files first and only creates what is missing.
+- `install-global.sh` takes `--opencode` / `--claude`; both tools get a
+  `pipeline` symlink to the clone. `link-project.sh` and `project/handoff/` are
+  removed (superseded).
+- Fixes: `Pipeline:` and `Model:` header values are now injected rather than
+  hard-coded; `@path` references in commands (not expanded by OpenCode V2) are
+  explicit read instructions; `ingest-workitems.py` writes `TRACKING.md`.
+- **Unverified in a real session** (tested only as scripts): skill `!` injection
+  and `allowed-tools` pre-approval in Claude Code; the hook firing on a real
+  `Write`; `/init` overriding Claude Code's built-in; the Explore override.
+  Try each once and tell me what breaks.
+
 ## 1.6.9
 
 **Manual step required.** New subagent added to the global config shape,

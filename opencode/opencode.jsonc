@@ -1,0 +1,310 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "ask",
+  "experimental": {
+    "subagent_depth": 1
+  },
+  "permissions": [
+    { "action": "read", "resource": "*", "effect": "allow" },
+    { "action": "read", "resource": "*.env", "effect": "deny" },
+    { "action": "read", "resource": "*.env.*", "effect": "deny" },
+    { "action": "read", "resource": "*.env.example", "effect": "allow" },
+    { "action": "shell", "resource": "*", "effect": "allow" },
+    { "action": "shell", "resource": "ls*", "effect": "allow" },
+    { "action": "shell", "resource": "cat *", "effect": "allow" },
+    { "action": "shell", "resource": "rg *", "effect": "allow" },
+    { "action": "shell", "resource": "git status*", "effect": "allow" },
+    { "action": "shell", "resource": "git log*", "effect": "allow" },
+    { "action": "shell", "resource": "git diff*", "effect": "allow" },
+    { "action": "shell", "resource": "git show*", "effect": "allow" },
+    { "action": "shell", "resource": "rm *", "effect": "deny" },
+    { "action": "shell", "resource": "git push*", "effect": "deny" },
+    { "action": "external_directory", "resource": "*", "effect": "ask" },
+    { "action": "edit", "resource": "*", "effect": "ask" },
+    { "action": "doom_loop", "resource": "*", "effect": "ask" }
+  ],
+  "agents": {
+    "ask": {
+      "mode": "primary",
+      "description": "Casual Q&A, outside the pipeline. No handoff doc, no template, no tier. For quick questions not worth a planning session.",
+      // "model": "opencode-go/glm-5.3-flash-free",
+      "model": "opencode/glm-5.3-flash-free#low",
+      "request": {
+        "body": {
+          "temperature": 0.3
+        }
+      },
+      "system": "{file:./prompts/ask.md}",
+      "permissions": [
+        { "action": "read", "resource": "*", "effect": "allow" },
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "grep", "resource": "*", "effect": "allow" },
+        { "action": "glob", "resource": "*", "effect": "allow" },
+        { "action": "webfetch", "resource": "*", "effect": "allow" },
+        { "action": "websearch", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "*", "effect": "ask" },
+        { "action": "shell", "resource": "ls*", "effect": "allow" },
+        { "action": "shell", "resource": "cat *", "effect": "allow" },
+        { "action": "shell", "resource": "rg *", "effect": "allow" },
+        { "action": "shell", "resource": "grep *", "effect": "allow" },
+        { "action": "shell", "resource": "head *", "effect": "allow" },
+        { "action": "shell", "resource": "tail *", "effect": "allow" },
+        { "action": "shell", "resource": "wc *", "effect": "allow" },
+        { "action": "shell", "resource": "echo *", "effect": "allow" },
+        { "action": "shell", "resource": "cd *", "effect": "allow" },
+        { "action": "shell", "resource": "find *", "effect": "allow" },
+        { "action": "shell", "resource": "xargs grep*", "effect": "allow" },
+        { "action": "shell", "resource": "xargs cat*", "effect": "allow" },
+        { "action": "shell", "resource": "xargs wc*", "effect": "allow" },
+        { "action": "shell", "resource": "git status*", "effect": "allow" },
+        { "action": "shell", "resource": "git log*", "effect": "allow" },
+        { "action": "shell", "resource": "git diff*", "effect": "allow" },
+        { "action": "shell", "resource": "cargo tree*", "effect": "allow" },
+        { "action": "shell", "resource": "rm *", "effect": "deny" },
+        { "action": "shell", "resource": "mv *", "effect": "deny" },
+        { "action": "shell", "resource": "cp *", "effect": "deny" },
+        { "action": "shell", "resource": "curl *", "effect": "deny" },
+        { "action": "shell", "resource": "wget *", "effect": "deny" },
+        { "action": "shell", "resource": "git commit*", "effect": "deny" },
+        { "action": "shell", "resource": "git push*", "effect": "deny" },
+        { "action": "shell", "resource": "*-exec*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "design": {
+      "mode": "primary",
+      "description": "Stage 1. Designs a slice with you. Reads project shape, never implementation bodies. Writes to handoff/1-plan/.",
+      // "model": "opencode-go/glm-5.3-flash-free",
+      "model": "opencode/glm-5.3-flash-free#high",
+      "request": {
+        "body": {
+          "temperature": 0.3
+        }
+      },
+      "system": "{file:./prompts/plan.md}",
+      "permissions": [
+        { "action": "read", "resource": "*", "effect": "allow" },
+        { "action": "read", "resource": "**/*.rs", "effect": "deny" },
+        { "action": "read", "resource": "**/*.ts", "effect": "deny" },
+        { "action": "read", "resource": "**/*.tsx", "effect": "deny" },
+        { "action": "read", "resource": "**/*.js", "effect": "deny" },
+        { "action": "read", "resource": "**/*.jsx", "effect": "deny" },
+        { "action": "read", "resource": "**/*.py", "effect": "deny" },
+        { "action": "read", "resource": "**/*.go", "effect": "deny" },
+        { "action": "read", "resource": "**/*.java", "effect": "deny" },
+        { "action": "read", "resource": "**/*.c", "effect": "deny" },
+        { "action": "read", "resource": "**/*.h", "effect": "deny" },
+        { "action": "read", "resource": "**/*.cpp", "effect": "deny" },
+        { "action": "read", "resource": "**/*.hpp", "effect": "deny" },
+        { "action": "read", "resource": "**/lib.rs", "effect": "allow" },
+        { "action": "read", "resource": "**/mod.rs", "effect": "allow" },
+        { "action": "read", "resource": "**/index.ts", "effect": "allow" },
+        { "action": "read", "resource": "**/*.d.ts", "effect": "allow" },
+        { "action": "read", "resource": "**/__init__.py", "effect": "allow" },
+        { "action": "read", "resource": "**/*.md", "effect": "allow" },
+        { "action": "read", "resource": "**/*.toml", "effect": "allow" },
+        { "action": "read", "resource": "**/*.json", "effect": "allow" },
+        { "action": "read", "resource": "**/*.yaml", "effect": "allow" },
+        { "action": "read", "resource": "**/*.yml", "effect": "allow" },
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "grep", "resource": "*", "effect": "deny" },
+        { "action": "glob", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "explore", "effect": "allow" },
+        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+      ]
+    },
+    "arch": {
+      "mode": "primary",
+      "description": "Stage 2. Verifies a plan against the real codebase, assigns a build tier, writes a spec to handoff/2-spec/. Never edits source.",
+      // "model": "opencode-go/glm-5.3-flash-free",
+      "model": "opencode/glm-5.3-flash-free#max",
+      "request": {
+        "body": {
+          "temperature": 0.2
+        }
+      },
+      "system": "{file:./prompts/arch.md}",
+      "permissions": [
+        { "action": "read", "resource": "*", "effect": "allow" },
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "grep", "resource": "*", "effect": "allow" },
+        { "action": "glob", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "ls *", "effect": "allow" },
+        { "action": "shell", "resource": "find *", "effect": "allow" },
+        { "action": "shell", "resource": "rg *", "effect": "allow" },
+        { "action": "shell", "resource": "grep *", "effect": "allow" },
+        { "action": "shell", "resource": "wc *", "effect": "allow" },
+        { "action": "shell", "resource": "git status*", "effect": "allow" },
+        { "action": "shell", "resource": "git log*", "effect": "allow" },
+        { "action": "shell", "resource": "git diff*", "effect": "allow" },
+        { "action": "shell", "resource": "git show*", "effect": "allow" },
+        { "action": "shell", "resource": "cargo tree*", "effect": "allow" },
+        { "action": "shell", "resource": "cargo metadata*", "effect": "allow" },
+        { "action": "shell", "resource": "rm *", "effect": "deny" },
+        { "action": "shell", "resource": "git commit*", "effect": "deny" },
+        { "action": "shell", "resource": "git push*", "effect": "deny" },
+        { "action": "shell", "resource": "git checkout*", "effect": "deny" },
+        { "action": "shell", "resource": "git reset*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "explore", "effect": "allow" },
+        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+      ]
+    },
+    "build": {
+      "mode": "primary",
+      "description": "Stage 3, tier T1 (routine). Implements a T1 spec. Cheap model, mechanical work only.",
+      // "model": "opencode-go/glm-5.3-flash-free",
+      "model": "opencode/glm-5.3-flash-free#low",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "system": "{file:./prompts/build.md}",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "ask" },
+        { "action": "shell", "resource": "*", "effect": "ask" },
+        { "action": "shell", "resource": "ls*", "effect": "allow" },
+        { "action": "shell", "resource": "rg *", "effect": "allow" },
+        { "action": "shell", "resource": "git status*", "effect": "allow" },
+        { "action": "shell", "resource": "git diff*", "effect": "allow" },
+        { "action": "shell", "resource": "git log*", "effect": "allow" },
+        { "action": "shell", "resource": "rm *", "effect": "deny" },
+        { "action": "shell", "resource": "git commit*", "effect": "ask" },
+        { "action": "shell", "resource": "git push*", "effect": "deny" },
+        { "action": "shell", "resource": "git reset*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "explore", "effect": "allow" },
+        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+      ]
+    },
+    "build-hard": {
+      "mode": "primary",
+      "description": "Stage 3, tier T2 (hard). Implements a T2 spec. Non-obvious logic spanning modules.",
+      // "model": "opencode-go/glm-5.3-flash-free",
+      "model": "opencode/glm-5.3-flash-free#high",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "system": "{file:./prompts/build-hard.md}",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "ask" },
+        { "action": "shell", "resource": "*", "effect": "ask" },
+        { "action": "shell", "resource": "ls*", "effect": "allow" },
+        { "action": "shell", "resource": "rg *", "effect": "allow" },
+        { "action": "shell", "resource": "git status*", "effect": "allow" },
+        { "action": "shell", "resource": "git diff*", "effect": "allow" },
+        { "action": "shell", "resource": "git log*", "effect": "allow" },
+        { "action": "shell", "resource": "rm *", "effect": "deny" },
+        { "action": "shell", "resource": "git commit*", "effect": "ask" },
+        { "action": "shell", "resource": "git push*", "effect": "deny" },
+        { "action": "shell", "resource": "git reset*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "explore", "effect": "allow" },
+        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+      ]
+    },
+    "build-critical": {
+      "mode": "primary",
+      "description": "Stage 3, tier T3 (critical). Safety- or security-critical code only. Narrow scope, per-edit approval, adversarial pass required.",
+      // "model": "opencode-go/glm-5.3-flash-free",
+      "model": "opencode/glm-5.3-flash-free#max",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "system": "{file:./prompts/build-critical.md}",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "ask" },
+        { "action": "shell", "resource": "*", "effect": "ask" },
+        { "action": "shell", "resource": "ls*", "effect": "allow" },
+        { "action": "shell", "resource": "rg *", "effect": "allow" },
+        { "action": "shell", "resource": "grep *", "effect": "allow" },
+        { "action": "shell", "resource": "head *", "effect": "allow" },
+        { "action": "shell", "resource": "tail *", "effect": "allow" },
+        { "action": "shell", "resource": "wc *", "effect": "allow" },
+        { "action": "shell", "resource": "echo *", "effect": "allow" },
+        { "action": "shell", "resource": "cd *", "effect": "allow" },
+        { "action": "shell", "resource": "find *", "effect": "allow" },
+        { "action": "shell", "resource": "xargs grep*", "effect": "allow" },
+        { "action": "shell", "resource": "cargo check*", "effect": "allow" },
+        { "action": "shell", "resource": "cargo clippy*", "effect": "allow" },
+        { "action": "shell", "resource": "cargo test*", "effect": "allow" },
+        { "action": "shell", "resource": "./Check.sh*", "effect": "allow" },
+        { "action": "shell", "resource": "git status*", "effect": "allow" },
+        { "action": "shell", "resource": "git diff*", "effect": "allow" },
+        { "action": "shell", "resource": "git log*", "effect": "allow" },
+        { "action": "shell", "resource": "rm *", "effect": "deny" },
+        { "action": "shell", "resource": "cargo add*", "effect": "deny" },
+        { "action": "shell", "resource": "cargo update*", "effect": "deny" },
+        { "action": "shell", "resource": "git commit*", "effect": "ask" },
+        { "action": "shell", "resource": "git push*", "effect": "deny" },
+        { "action": "shell", "resource": "*-exec*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "explore", "effect": "allow" },
+        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+      ]
+    },
+    "explore": {
+      "mode": "subagent",
+      "description": "Read-only lookup. Answers one specific question about the codebase in prose. Returns findings and file:line references, never file dumps.",
+      // "model": "opencode-go/longcat-2.5-preview-free",
+      "model": "opencode/glm-5.3-flash-free",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "system": "{file:./prompts/explore.md}",
+      "permissions": [
+        { "action": "read", "resource": "*", "effect": "allow" },
+        { "action": "read", "resource": "*.env", "effect": "deny" },
+        { "action": "read", "resource": "*.env.*", "effect": "deny" },
+        { "action": "grep", "resource": "*", "effect": "allow" },
+        { "action": "glob", "resource": "*", "effect": "allow" },
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "webfetch", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "scribe": {
+      "mode": "subagent",
+      "description": "Write-only. Places a finished handoff and map document at the correct path. Never composes content.",
+      // "model": "opencode-go/hy3",
+      "model": "opencode/glm-5.3-flash-free",
+      "request": {
+        "body": {
+          "temperature": 0
+        }
+      },
+      "system": "{file:./prompts/scribe.md}",
+      "permissions": [
+        { "action": "read", "resource": "*", "effect": "deny" },
+        { "action": "grep", "resource": "*", "effect": "deny" },
+        { "action": "glob", "resource": "*", "effect": "deny" },
+        { "action": "glob", "resource": ".handoff/**", "effect": "allow" },
+        { "action": "edit", "resource": "*", "effect": "ask" },
+        { "action": "edit", "resource": ".handoff/1-plan/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/2-spec/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/3-report/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/MAP.md", "effect": "allow" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "webfetch", "resource": "*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" }
+      ]
+    }
+  }
+}

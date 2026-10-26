@@ -1,91 +1,83 @@
-# opencode-pipeline
+# coding-pipeline
 
-A three-stage development pipeline for OpenCode: **plan → architecture →
-build**, with a markdown document at every seam and a hard stop between stages.
-Plus `ask`, a fourth agent that sits outside the pipeline for quick questions.
+A staged development pipeline for **OpenCode and Claude Code**: **plan →
+architecture/spec → build**, with a markdown document at every seam and a hard
+stop between stages. The record lives in the project, not in either tool, so
+you can run Claude Code until its weekly limit runs out, then carry on in
+OpenCode on free models from the same files.
 
-Version **1.6.0**.
+Version **2.0.0** (see `VERSION`; `CHANGELOG.md` has the migration notes).
 
-## What it is for
+## One record, two tools
 
-Different stages of building software want different things from a model.
-Planning wants a good conversational partner and produces almost no context.
-Architecture wants the whole codebase in view and is expensive because of it.
-Building wants to follow instructions accurately and gets run the most often.
-
-Using one model for all three either overpays for the cheap stages or
-underpowers the expensive ones. This splits them into separate agents with
-separate models, and puts a document the human actually reads at each handoff.
+Every project gets this layout, written by `/init` from either tool:
 
 ```
-  /plan   →  handoff/1-plan/<stem>.plan.md      intent, assumptions, open questions
-  /arch   →  handoff/2-spec/<stem>.spec.md      verified against code, tiered
-  /build  →  handoff/3-report/<stem>.report.md  what actually happened
+.handoff/        plan / spec / report documents, templates, MAP.md   (shared)
+.workitems/      work item index; TRACKING.md says whether tickets are tracked (shared)
+.opencode/       opencode.jsonc — per-project OpenCode overrides      (OpenCode)
+.claude/         settings.json — per-project Claude Code settings     (Claude Code)
+AGENTS.md        project facts, T3 floor (shared)    CLAUDE.md  → imports AGENTS.md
 ```
 
-`<stem>` is `YYYY-MM-DD-<slice>` and stays identical across all three, so a
-slice is traceable end to end and the history stays readable months later.
+| Stage | OpenCode | Claude Code | Writes |
+|---|---|---|---|
+| 1 plan | `/plan` | (skipped — `/spec` does 1+2) | `.handoff/1-plan/<stem>.plan.md` |
+| 2 spec | `/arch <stem>` | `/spec <slice \| ticket \| plan stem>` in plan mode | `.handoff/2-spec/<stem>.spec.md` |
+| 3 build | `/build <stem>` on the tier's agent | `/build <stem>` on the tier's model | `.handoff/3-report/<stem>.report.md` |
+| late report | `/handoff <stem>` | `/handoff <stem>` | same |
+| helpers | `/ask` `/status` `/tickets` `/map` `/init` | `/ask` `/progress` `/tickets` `/map` `/init` | — |
+
+In Claude Code only `/spec` writes the spec (explore + plan mode, written after
+you approve the plan) and only the build session writes the report. A hook
+(`claude/hooks/check-handoff-write.py`) rejects handoff writes with the wrong
+name, a missing or placeholder header, or an overwrite. The `Pipeline:` and
+`Model:` header fields record which tool and model produced each document, so a
+spec from one tool is a valid build instruction in the other.
+
+Which models run which stage is configuration, not documentation:
+`opencode/opencode.jsonc` for OpenCode; in Claude Code you choose with `/model`
+and `/build` tells you what the spec's tier calls for.
 
 ## Quick start
 
-**Recommended — clone it, don't copy it.** This is what makes future updates
-a plain `git pull` instead of re-running `cp` on every device and project
-every time something changes.
-
 ```sh
-# 1. Clone once per device, wherever you keep local repos
-git clone <your-fork-url> ~/dev/opencode-pipeline
-cd ~/dev/opencode-pipeline
+# 1. Clone once per device
+git clone <your-fork-url> ~/dev/coding-pipeline
+cd ~/dev/coding-pipeline
 
-# 2. Process layer, once per device
-./scripts/install-global.sh
-# Symlinks ~/.config/opencode/{opencode.jsonc,AGENTS.md,prompts,commands,templates}
-# into this clone. Backs up anything already there. Creates
-# ~/.config/opencode/local-overrides.jsonc for personal tweaks that
-# `git pull` will never touch — it prints an OPENCODE_CONFIG export line
-# to add to your shell rc file; do that once.
+# 2. Global layer, once per device (idempotent; default is both tools)
+./scripts/install-global.sh              # or --opencode / --claude
+# OpenCode: symlinks ~/.config/opencode/{opencode.jsonc,AGENTS.md,prompts,
+#   commands,templates,pipeline}; creates local-overrides.jsonc (never touched
+#   again) and prints an OPENCODE_CONFIG line for your shell rc.
+# Claude:   symlinks ~/.claude/pipeline, rules/pipeline.md, skills/*,
+#   agents/Explore.md; merges the handoff guard into ~/.claude/settings.json
+#   (backup first, nothing of yours is overwritten).
 
-# 3. Project layer, once per repo
+# 3. Project layer, once per repo — from either tool, or directly:
 cd /path/to/your/repo
-mkdir -p .opencode
-cp ~/dev/opencode-pipeline/project/AGENTS.md.example .opencode/AGENTS.md
-# optional — only if this repo needs different models or tighter permissions:
-cp ~/dev/opencode-pipeline/project/opencode.jsonc.example .opencode/opencode.jsonc
+~/dev/coding-pipeline/scripts/init-project.sh        # or run /init in a tool
+# Checks what already exists, creates only what is missing, never overwrites.
+# Existing pre-2.0 layouts (.opencode/handoff, .opencode/workitems, ...) are
+# flagged, and moved only with:  init-project.sh --migrate   (uses git mv)
+# --dry-run shows what it would do.
 
-# then, from that same clone:
-~/dev/opencode-pipeline/scripts/link-project.sh /path/to/your/repo
-# Symlinks just the three handoff templates — pure process, safe to
-# auto-update. Leaves opencode.jsonc and AGENTS.md as real files, since
-# those hold this project's actual facts.
-
-# 4. Fill in .opencode/AGENTS.md — especially the T3 floor
-# 5. Start OpenCode, run /init once, then /map to generate .opencode/MAP.md
+# 4. Fill in AGENTS.md — especially the T3 floor (left as TODO on purpose)
+# 5. Run /map once to generate .handoff/MAP.md
 ```
 
-From here, updating any device is:
+Updating any device afterwards is `cd ~/dev/coding-pipeline && git pull`.
 
-```sh
-cd ~/dev/opencode-pipeline && git pull
-```
+**Per-project overrides.** `.opencode/opencode.jsonc` (models, permissions) and
+`.claude/settings.json` (permissions; see `project/claude-settings.json.example`)
+are real files owned by the project. Everything else is a symlink into the clone
+and updates on pull.
 
-See [Updating across devices and projects](#updating-across-devices-and-projects)
-below for what does and doesn't update automatically.
-
-**No git, or just trying it once?** Skip the clone and use plain copies
-instead — you'll just be back to manual `cp` on every future update:
-
-```sh
-cp -r global/* ~/.config/opencode/
-cd /path/to/your/repo
-mkdir -p .opencode
-cp -r /path/to/opencode-pipeline/project/handoff .opencode/
-cp /path/to/opencode-pipeline/project/AGENTS.md.example .opencode/AGENTS.md
-cp /path/to/opencode-pipeline/project/opencode.jsonc.example .opencode/opencode.jsonc   # optional
-```
-
-Then, either way: `/plan <what you want>` → read the doc → `/arch <stem>` →
-read the doc → Tab to the agent the tier names → `/build <stem>` →
-`/handoff <stem>`.
+Then, in Claude Code: `/spec <what you want>` (in plan mode) → approve →
+`/build <stem>` → `/handoff <stem>` if needed. In OpenCode:
+`/plan <what you want>` → read the doc → `/arch <stem>` → read the doc → Tab to
+the agent the tier names → `/build <stem>` → `/handoff <stem>`.
 
 `/ask <question>` works from any tab, any time, for something not worth
 interrupting that flow for. `/status [scope]` and `/tickets [filter]` are the
@@ -278,20 +270,30 @@ retier off a vendor chart alone.
 ## Files
 
 ```
-global/                         → ~/.config/opencode/
-  opencode.json                 seven agents: models and permissions
+shared/                         used by both tools
   AGENTS.md                     rules that apply to every stage
-  prompts/                      one system prompt per agent
-  commands/                     /plan /arch /build /handoff /map /init /ask /tickets /status
+  prompts/                      one system prompt per stage / agent
   templates/                    the three handoff templates
-project/                        → <repo>/.opencode/
-  opencode.jsonc.example        placeholder-marked, only if you need overrides
-  AGENTS.md.example             module map + T3 floor skeleton
-  handoff/                      templates and the three stage directories
+opencode/                       → ~/.config/opencode/
+  opencode.jsonc                seven agents: models and permissions
+  commands/                     /plan /arch /build /handoff /map /init /ask /tickets /status
+claude/                         → ~/.claude/
+  skills/                       /spec /build /handoff /ask /progress /tickets /map /init
+  agents/Explore.md             generated from shared/prompts/explore.md
+  hooks/, settings.pipeline.json  handoff write guard and its settings entry
+project/                        examples copied into each repo by /init
+  opencode.jsonc.example        → .opencode/opencode.jsonc
+  claude-settings.json.example  → .claude/settings.json
+  AGENTS.md.example, CLAUDE.md.example
 scripts/
-  install-global.sh             one-time per-device setup: symlinks global/ in
-  link-project.sh               one-time per-project setup: symlinks handoff templates
-  ingest-workitems.py           task tracker(s) -> .opencode/workitems/ (html, csv/sheets, appflowy — combinable)
+  install-global.sh             one-time per-device setup: symlinks both tools in
+  init-project.sh               per-project setup for both tools (idempotent; --migrate, --dry-run)
+  install-global.sh             per-device setup (--opencode / --claude)
+  pipeline-ctx.sh               read-only context helper the Claude skills call
+  configured-model.sh           reads the configured model for an OpenCode agent
+  build-explore-agent.sh        generates claude/agents/Explore.md from the shared explore prompt
+  merge-claude-settings.py      merges the hook into ~/.claude/settings.json safely
+  ingest-workitems.py           task tracker(s) -> .workitems/ (html, csv/sheets, appflowy — combinable)
 ```
 
 **On file extensions:** `.jsonc` (not `.json`) throughout this template,
@@ -338,7 +340,7 @@ of them directly. `scripts/ingest-workitems.py` converts one or several
 sources into a canonical tree:
 
 ```
-.opencode/workitems/
+.workitems/
 ├── WORKITEMS.md          compact index — the planner and /tickets read this
 └── items/<ID>.md         full detail — read on demand when planning that item
 ```
@@ -353,20 +355,20 @@ Three so far, and they combine — use one or all three in the same run:
 
 ```sh
 # shared HTML breakdown
-./scripts/ingest-workitems.py --from-html BREAKDOWN.html --out .opencode/workitems
+./scripts/ingest-workitems.py --from-html BREAKDOWN.html --out .workitems
 
 # CSV / TSV export, or a published Google Sheet URL
-./scripts/ingest-workitems.py --from-csv sheet.tsv --out .opencode/workitems
+./scripts/ingest-workitems.py --from-csv sheet.tsv --out .workitems
 ./scripts/ingest-workitems.py --from-csv "https://docs.google.com/.../pub?output=csv" \
-    --out .opencode/workitems
+    --out .workitems
 
 # AppFlowy — discover first, then configure, then pull
 export APPFLOWY_URL=https://tasks.example.com
 export APPFLOWY_EMAIL=you@example.com APPFLOWY_PASSWORD=...
 ./scripts/ingest-workitems.py --from-appflowy --list-databases
 ./scripts/ingest-workitems.py --from-appflowy --database <id> --list-fields
-./scripts/ingest-workitems.py --from-appflowy --config .opencode/workitems/appflowy.json \
-    --out .opencode/workitems
+./scripts/ingest-workitems.py --from-appflowy --config .workitems/appflowy.json \
+    --out .workitems
 ```
 
 **Combine them in one run** when different sources hold different parts of
@@ -376,7 +378,7 @@ the truth — e.g. a detailed HTML spec plus a sheet that tracks live status:
 ./scripts/ingest-workitems.py \
   --from-html BREAKDOWN.html \        # technical detail, DOD, dependencies
   --from-csv sheet.tsv \              # hierarchy, user stories, owner, SP
-  --out .opencode/workitems
+  --out .workitems
 ```
 
 Merge order matters — **first non-empty value per field wins**, so list your
@@ -465,7 +467,7 @@ a full regeneration from the source(s), not an incremental diff, so there's
 no separate "sync" step:
 
 ```sh
-./scripts/ingest-workitems.py --from-html BREAKDOWN.html --out .opencode/workitems
+./scripts/ingest-workitems.py --from-html BREAKDOWN.html --out .workitems
 ```
 
 Added and changed tickets just show up correctly. Removed tickets (finished

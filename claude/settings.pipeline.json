@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/pipeline/claude/hooks/check-handoff-write.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
