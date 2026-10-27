@@ -111,12 +111,15 @@
         { "action": "read", "resource": "*.env", "effect": "deny" },
         { "action": "read", "resource": "*.env.*", "effect": "deny" },
         { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "edit", "resource": ".handoff/1-plan/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/2-spec/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/3-report/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/MAP.md", "effect": "allow" },
         { "action": "grep", "resource": "*", "effect": "deny" },
         { "action": "glob", "resource": "*", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "deny" },
         { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "explore", "effect": "allow" },
-        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+        { "action": "subagent", "resource": "explore", "effect": "allow" }
       ]
     },
     "arch": {
@@ -135,6 +138,10 @@
         { "action": "read", "resource": "*.env", "effect": "deny" },
         { "action": "read", "resource": "*.env.*", "effect": "deny" },
         { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "edit", "resource": ".handoff/1-plan/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/2-spec/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/3-report/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/MAP.md", "effect": "allow" },
         { "action": "grep", "resource": "*", "effect": "allow" },
         { "action": "glob", "resource": "*", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "allow" },
@@ -155,8 +162,7 @@
         { "action": "shell", "resource": "git checkout*", "effect": "deny" },
         { "action": "shell", "resource": "git reset*", "effect": "deny" },
         { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "explore", "effect": "allow" },
-        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+        { "action": "subagent", "resource": "explore", "effect": "allow" }
       ]
     },
     "build": {
@@ -172,6 +178,10 @@
       "system": "{file:./prompts/build.md}",
       "permissions": [
         { "action": "edit", "resource": "*", "effect": "ask" },
+        { "action": "edit", "resource": ".handoff/1-plan/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/2-spec/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/3-report/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/MAP.md", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "ask" },
         { "action": "shell", "resource": "ls*", "effect": "allow" },
         { "action": "shell", "resource": "rg *", "effect": "allow" },
@@ -183,8 +193,7 @@
         { "action": "shell", "resource": "git push*", "effect": "deny" },
         { "action": "shell", "resource": "git reset*", "effect": "deny" },
         { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "explore", "effect": "allow" },
-        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+        { "action": "subagent", "resource": "explore", "effect": "allow" }
       ]
     },
     "build-hard": {
@@ -200,6 +209,10 @@
       "system": "{file:./prompts/build-hard.md}",
       "permissions": [
         { "action": "edit", "resource": "*", "effect": "ask" },
+        { "action": "edit", "resource": ".handoff/1-plan/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/2-spec/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/3-report/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/MAP.md", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "ask" },
         { "action": "shell", "resource": "ls*", "effect": "allow" },
         { "action": "shell", "resource": "rg *", "effect": "allow" },
@@ -211,8 +224,7 @@
         { "action": "shell", "resource": "git push*", "effect": "deny" },
         { "action": "shell", "resource": "git reset*", "effect": "deny" },
         { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "explore", "effect": "allow" },
-        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+        { "action": "subagent", "resource": "explore", "effect": "allow" }
       ]
     },
     "build-critical": {
@@ -228,6 +240,10 @@
       "system": "{file:./prompts/build-critical.md}",
       "permissions": [
         { "action": "edit", "resource": "*", "effect": "ask" },
+        { "action": "edit", "resource": ".handoff/1-plan/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/2-spec/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/3-report/**", "effect": "allow" },
+        { "action": "edit", "resource": ".handoff/MAP.md", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "ask" },
         { "action": "shell", "resource": "ls*", "effect": "allow" },
         { "action": "shell", "resource": "rg *", "effect": "allow" },
@@ -253,8 +269,7 @@
         { "action": "shell", "resource": "git push*", "effect": "deny" },
         { "action": "shell", "resource": "*-exec*", "effect": "deny" },
         { "action": "subagent", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "explore", "effect": "allow" },
-        { "action": "subagent", "resource": "scribe", "effect": "allow" }
+        { "action": "subagent", "resource": "explore", "effect": "allow" }
       ]
     },
     "explore": {
@@ -275,32 +290,6 @@
         { "action": "grep", "resource": "*", "effect": "allow" },
         { "action": "glob", "resource": "*", "effect": "allow" },
         { "action": "edit", "resource": "*", "effect": "deny" },
-        { "action": "shell", "resource": "*", "effect": "deny" },
-        { "action": "webfetch", "resource": "*", "effect": "deny" },
-        { "action": "subagent", "resource": "*", "effect": "deny" }
-      ]
-    },
-    "scribe": {
-      "mode": "subagent",
-      "description": "Write-only. Places a finished handoff and map document at the correct path. Never composes content.",
-      // "model": "opencode-go/hy3",
-      "model": "opencode/glm-5.3-flash-free",
-      "request": {
-        "body": {
-          "temperature": 0
-        }
-      },
-      "system": "{file:./prompts/scribe.md}",
-      "permissions": [
-        { "action": "read", "resource": "*", "effect": "deny" },
-        { "action": "grep", "resource": "*", "effect": "deny" },
-        { "action": "glob", "resource": "*", "effect": "deny" },
-        { "action": "glob", "resource": ".handoff/**", "effect": "allow" },
-        { "action": "edit", "resource": "*", "effect": "ask" },
-        { "action": "edit", "resource": ".handoff/1-plan/**", "effect": "allow" },
-        { "action": "edit", "resource": ".handoff/2-spec/**", "effect": "allow" },
-        { "action": "edit", "resource": ".handoff/3-report/**", "effect": "allow" },
-        { "action": "edit", "resource": ".handoff/MAP.md", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "deny" },
         { "action": "webfetch", "resource": "*", "effect": "deny" },
         { "action": "subagent", "resource": "*", "effect": "deny" }

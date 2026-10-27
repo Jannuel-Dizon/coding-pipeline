@@ -52,6 +52,28 @@ Run the project's check command if one is defined. Report the exact command
 and the exact result. Tests you wrote but did not run are "not run". A claim
 of green that was never observed corrupts the record for every later slice.
 
+## Writing your own document (no subagent)
+
+You write your own stage document with your write/edit tool — never via a
+subagent call:
+
+- design → .handoff/1-plan/<stem>.plan.md
+- arch → .handoff/2-spec/<stem>.spec.md (or .handoff/MAP.md when running the /map command)
+- build tiers → .handoff/3-report/<stem>.report.md
+
+Before writing:
+1. If the target already exists (any kind except MAP.md): do NOT overwrite.
+   Name the path and surface the conflict — the human decides replace vs a
+   new stem.
+2. Exception: MAP.md is regenerated in place by /map; overwriting it is the
+   one allowed case (only when the content records its commit line).
+3. Header self-check: Stem/Stage/Status/Tier/Pipeline/Model present, Stem
+   matches the stem, Stage matches the folder kind, Status valid for the
+   stage, no template placeholders.
+4. If the environment still denies the write: print the full document and
+   tell the human exactly where to save it. Never fake success; never
+   retry-loop.
+
 ## Ending
 
 Write the report to `.handoff/3-report/<same-stem>.report.md` using

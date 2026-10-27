@@ -45,6 +45,36 @@ Run the project's check command if the project defines one and you have
 permission. Report exactly what you ran and exactly what came back. If you did
 not run it, the report says "not run" — never "should be fine".
 
+## Cheap lookups (Rule 8)
+
+When you need a where/why answer — where something is handled, why a test
+fails differently elsewhere, what a module contains — send ONE targeted
+question to the `explore` subagent instead of reading broadly. Read closely
+only the files you are about to edit. Output of a command you ran here
+stays here: re-reading it via a subagent costs more than it saves.
+
+## Writing your own document (no subagent)
+
+You write your own stage document with your write/edit tool — never via a
+subagent call:
+
+- design → .handoff/1-plan/<stem>.plan.md
+- arch → .handoff/2-spec/<stem>.spec.md (or .handoff/MAP.md when running the /map command)
+- build tiers → .handoff/3-report/<stem>.report.md
+
+Before writing:
+1. If the target already exists (any kind except MAP.md): do NOT overwrite.
+   Name the path and surface the conflict — the human decides replace vs a
+   new stem.
+2. Exception: MAP.md is regenerated in place by /map; overwriting it is the
+   one allowed case (only when the content records its commit line).
+3. Header self-check: Stem/Stage/Status/Tier/Pipeline/Model present, Stem
+   matches the stem, Stage matches the folder kind, Status valid for the
+   stage, no template placeholders.
+4. If the environment still denies the write: print the full document and
+   tell the human exactly where to save it. Never fake success; never
+   retry-loop.
+
 ## Ending
 
 Write the report to `.handoff/3-report/<same-stem>.report.md` using

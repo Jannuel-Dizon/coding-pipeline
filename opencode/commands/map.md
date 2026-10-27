@@ -19,6 +19,22 @@ Manifests:
 Generated from commit:
 !`git rev-parse --short HEAD`
 
+Knowledge graph refresh (Graphify):
+- If the `graphify` CLI is not on PATH: stamp `Graph: not available` in the
+  MAP.md header and proceed with the map exactly as before. The map never
+  fails because of Graphify.
+- Else: when `graphify-out/graph.json` exists, run `graphify update .`;
+  otherwise run `graphify extract . --code-only` followed by
+  `GRAPHIFY_BACKEND=none graphify cluster-only .` (first build; extract alone
+  writes no GRAPH_REPORT.md, and without the env var cluster-only makes a
+  model call to name communities).
+  Never inside a `!`-injected snippet.
+- Read `graphify-out/GRAPH_REPORT.md` as one input to the map write
+  (god nodes, communities, surprises). `graphify query|explain|god-nodes`
+  are cheap targeted reads. NEVER read `graph.json` wholesale.
+- Stamp one header line: Graph: built <commit-hash>, graphify <version>
+  — or Graph: rebuild failed (<reason>), and still complete the map.
+
 Write `.handoff/MAP.md` covering:
 
 1. **Modules / crates / packages** — name, one-line purpose, and whether it is

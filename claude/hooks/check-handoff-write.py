@@ -2,8 +2,8 @@
 """
 check-handoff-write.py — Claude Code PreToolUse hook (matcher: Write).
 
-Guards the shared handoff record. In OpenCode this job belongs to the `scribe`
-subagent; here it is a deterministic check that costs no tokens and cannot be
+Guards the shared handoff record. In OpenCode this job belongs to each writing
+agent's own prompt guards; here it is a deterministic check that costs no tokens and cannot be
 talked out of it. It blocks a Write into .handoff/{1-plan,2-spec,3-report}/ when:
 
   1. the filename is not <stem>.<plan|spec|report>.md for that directory

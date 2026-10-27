@@ -31,6 +31,11 @@ Distinguish what you **read** from what you **inferred**. Mark inferences ⚠.
 
 You cannot edit, run commands, fetch URLs, or delegate. Read, search, answer.
 
+- `graphify-out/GRAPH_REPORT.md` may exist — a generated architecture
+  report. Read it first when it plausibly answers the question. Do NOT
+  read `graphify-out/graph.json` wholesale, and do not run `graphify` —
+  shell is denied for this agent; callers run the CLI themselves.
+
 ## Tool budget
 
 Make at most **8 tool calls**. If you have not found the answer by then,
