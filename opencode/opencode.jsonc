@@ -142,6 +142,7 @@
         { "action": "edit", "resource": ".handoff/2-spec/**", "effect": "allow" },
         { "action": "edit", "resource": ".handoff/3-report/**", "effect": "allow" },
         { "action": "edit", "resource": ".handoff/MAP.md", "effect": "allow" },
+        { "action": "edit", "resource": ".graphify-scopes/**", "effect": "allow" },
         { "action": "grep", "resource": "*", "effect": "allow" },
         { "action": "glob", "resource": "*", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "allow" },

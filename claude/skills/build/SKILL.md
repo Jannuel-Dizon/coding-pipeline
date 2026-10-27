@@ -50,19 +50,14 @@ Pipeline version (stamp in `Pipeline:`): !`~/.claude/pipeline/scripts/pipeline-c
 
 ## 2. Match the session to the tier
 
-Say the tier (the spec's, or your assigned one for a direct build) and what it
-calls for, then ask the human to confirm the session matches before you do
-anything else. The models and efforts below are suggestions only: the human
-makes the final decision on which model and effort the session runs on, and may
-choose something other than the suggestion (`/model` switches). Do not refuse or
-nag if they choose differently; note the difference in the report's §0 and carry
-on:
-
-| Tier | Session |
-|---|---|
-| T1 routine | Sonnet, normal effort |
-| T2 hard | Sonnet at high effort, or Opus |
-| T3 critical | Opus, high effort, **manual edit approval — not accept-edits or auto** |
+Say the tier (the spec's, or your assigned one for a direct build) and its
+meaning from the Rule 4 table — T1 routine, T2 hard, T3 critical — then get
+the normal go-ahead before doing anything else. The tier's meaning is the
+recommendation; the human has already decided which model and thinking level
+this session runs on. Ask nothing about model or thinking level and do not
+suggest one; the report's `Model:` header records what actually ran. For T3
+only, also confirm manual edit approval is active — manual, not accept-edits
+or auto.
 
 Then read the file for the tier and follow it as your operating instructions
 for this stage: `~/.claude/pipeline/shared/prompts/build.md` (T1),

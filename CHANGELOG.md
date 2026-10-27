@@ -5,6 +5,78 @@ process — prompts, commands, templates) or needs a manual look at each
 project's filled `opencode.jsonc` / `AGENTS.md` (structural — new agents,
 changed defaults, changed permission shape).
 
+## 2.2.0
+
+**Structural — manual step required per project.** `/map` gains a cross-scope
+relink step (rarely a silent no-op on multi-scope projects, so the graph
+changes), and the Claude `/build` skill stops suggesting models per tier.
+
+- **`/map` relinks cross-scope imports after merge, before cluster-only.**
+  `#include` across scope roots lands on shared placeholder nodes (graphify
+  resolves includes within a scope only), and `merge-graphs` links `calls`
+  across scopes by name only — both wrong when scopes of different
+  generations share header names. New always-on step 4 (embedded python3,
+  printed from the command file, no helper script) rewrites a placeholder
+  target to the unique real header node in the importing scope's uniquely
+  nearest other scope, relinks same-scope stubs behind already-repaired
+  stems, drops remaining cross-scope `calls` edges with a count (never
+  against the calling scope's own best-matching target), removes now-orphan
+  placeholders, and tags every rewritten link `_map_relinked: true`. Summary
+  is one line of JSON; per-scope repaired/unresolved + stubs counts land in
+  the MAP stamp. Unscoped/single-scope projects print
+  `skipped (fewer than two scopes)` and are untouched. MAP.md's old ⚠
+  cross-scope caveats are replaced by these counts when present.
+- **Header-name matching in that relink is case-insensitive.** graphify
+  lowercases placeholder labels, so `#include "modbusTCP.h"` produced
+  placeholder `modbustcp`, which no case-sensitive stem table could match
+  (missed 21 import edges across the lges fixture). Stem keys, candidate
+  filters and the per-stem gate now compare lowercased values on both sides;
+  if two candidate-scope files differ only by case, the edge stays
+  unresolved — never guessed (fixture-verified). The stub step also
+  recognises graphify's file-qualified `<scope>::<file-slug>_<class>` stub
+  ids next to the bare `<scope>::<class>` shape, so type references behind
+  repaired headers (`CModbusTCP` 22/39 on the fixture) relink per
+  generation. Same-conservatism gates apply: exactly one real same-label
+  class in the nearest scope, defining header repaired this run, same-repo
+  source. Deferred-stub counts change meaning: `stubs_deferred` now counts
+  both shapes (172 → 1117 on the fixture) — honest counts, not a regression.
+- **Cluster-only's refuse-once after relink is normal** (placeholders gone ⇒
+  fewer nodes): the existing cp-then-retry-once rule covers it; no new
+  special case.
+- **Claude `/build` asks nothing about model or thinking level.** The tier
+  statement is the recommendation; the report's `Model:` header records what
+  ran. T3 keeps only the manual-edit-approval confirmation.
+- **Provenance caveat:** graphify's cluster-only rewrite preserves unknown
+  edge fields, so `_map_relinked` survives into `graphify-out/graph.json`
+  (verified on a 5-scope project: 538 relinked links after the fix above).
+
+## 2.1.0
+
+**Structural — manual step required per project.** The `arch` grant gains
+`edit .graphify-scopes/**`, and `/map`'s Graphify block is replaced wholesale
+in both tools.
+
+- **`/map` scopes its knowledge graph.** First run asks which source trees to
+  cover and saves them to `.graphify-scopes/config.json` (tracked; intermediates
+  ignored by a nested `.gitignore`, so no edit to the project's own ignore
+  files). Later runs ask keep / add / remove, or take it as an argument:
+  `/map keep | none | reset | add <path>… | remove <name>…`. Each scope is
+  extracted separately (`extract --out`, manifest-incremental — unchanged
+  scopes are not re-extracted), merged into `.graphify-scopes/merged/graph.json`,
+  and clustered through `cluster-only --graph` into the usual `graphify-out/`.
+- **`opencode.jsonc`: `arch` may edit `.graphify-scopes/**`** (new allow under
+  the existing `edit *` deny). Projects with their own `agent` block must add
+  the same line by hand. The Claude side gets three new `allowed-tools` grants
+  on the map skill: `Bash(du *)`, `Write(/.handoff/MAP.md)` (first-run MAP
+  creation), `Write(/.graphify-scopes/**)`; plus a narrow
+  `Bash(cp .graphify-scopes/* *)` (verified: graphify's shrink guard and its
+  output-location rule need an in-place single-graph copy).
+- **Graphify CLI surface pinned to 0.9.96.** `graphify update` is never run;
+  `merge-graphs` needs two inputs (a single surviving scope, or unscoped mode,
+  copies its graph into `merged/` instead); a deliberate shrink after `remove`
+  trips cluster-only's refuse-to-overwrite guard and needs one ordered `cp`
+  before the retry.
+
 ## 2.0.0
 
 **Structural — manual step required per project.** The handoff record and work
